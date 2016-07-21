@@ -33,6 +33,12 @@ func (repo *MySQLRepo) DeleteVmDeviceLogByDeviceID(deviceID uint) (*model.VmDevi
 func (repo *MySQLRepo) UpdateVmDeviceLogTypeByDeviceIdAndType(deviceId uint, logType string, newLogType string) ([]model.VmDeviceLog, error) {
 	var result []model.VmDeviceLog
 	sql := "update vm_device_logs set type = '" + newLogType + "' where device_id = " + fmt.Sprintf("%d", deviceId) + " and type = '" + logType + "'"
+
+	/*
+		var device_id = fmt.Sprintf("%d", deviceId)
+		repo.db.Model(&VmDeviceLog).Update("type", newLogType).Where("device_id =?", deviceId).Where("type", logType)
+	*/
+
 	err := repo.db.Raw(sql).Scan(&result).Error
 	return result, err
 }

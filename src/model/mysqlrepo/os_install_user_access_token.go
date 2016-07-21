@@ -26,6 +26,16 @@ func (repo *MySQLRepo) CountUserAccessTokenByToken(accessToken string) (uint, er
 
 func (repo *MySQLRepo) GetUserByAccessToken(accessToken string) (*model.UserWithToken, error) {
 	var result model.UserWithToken
-	err := repo.db.Raw("SELECT t1.access_token,t2.username,t2.role,t2.name,t2.id from user_access_tokens t1 inner join users t2 on t1.user_id = t2.id where t1.access_token = ?", accessToken).Scan(&result).Error
+	sql := `SELECT
+	t1.access_token,
+	t2.username,
+	t2.role,
+	t2.name,
+	t2.id
+	from user_access_tokens t1
+	inner join users t2
+	on t1.user_id = t2.id
+	where t1.access_token = ?`
+	err := repo.db.Raw(sql, accessToken).Scan(&result).Error
 	return &result, err
 }

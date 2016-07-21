@@ -64,7 +64,15 @@ func (repo *MySQLRepo) GetNetworkIdByNetwork(network string) (uint, error) {
 
 func (repo *MySQLRepo) AssignNewIpByNetworkId(network_id uint) (string, error) {
 	var result model.Ip
-	err := repo.db.Raw("select t1.* from ips t1 left join devices t2 on t1.ip = t2.ip left join vm_devices t3 on t1.ip = t3.ip where t1.network_id = ? and t2.id is null and t3.id is null order by t1.id asc limit 1", network_id).Scan(&result).Error
+
+	sql := `select t1.* from ips t1
+	left join devices t2 on t1.ip = t2.ip
+	left join vm_devices t3 on t1.ip = t3.ip
+	where t1.network_id = ?
+	and t2.id is null
+	and t3.id is null order by t1.id asc limit 1`
+
+	err := repo.db.Raw(sql, network_id).Scan(&result).Error
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +81,15 @@ func (repo *MySQLRepo) AssignNewIpByNetworkId(network_id uint) (string, error) {
 
 func (repo *MySQLRepo) GetNotUsedIPListByNetworkId(network_id uint) ([]model.Ip, error) {
 	var result []model.Ip
-	err := repo.db.Raw("select t1.* from ips t1 left join devices t2 on t1.ip = t2.ip left join vm_devices t3 on t1.ip = t3.ip where t1.network_id = ? and t2.id is null and t3.id is null order by t1.id asc limit 200", network_id).Scan(&result).Error
+
+	sql := `select t1.* from ips t1
+	left join devices t2 on t1.ip = t2.ip
+	left join vm_devices t3 on t1.ip = t3.ip
+	where t1.network_id = ?
+	and t2.id is null
+	and t3.id is null
+	order by t1.id asc limit 200`
+	err := repo.db.Raw(sql, network_id).Scan(&result).Error
 	if err != nil {
 		return result, err
 	}

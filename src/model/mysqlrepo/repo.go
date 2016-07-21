@@ -6,6 +6,8 @@ import (
 
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+
 	"github.com/jinzhu/gorm"
 	"server/osinstallserver/util"
 )
@@ -48,6 +50,7 @@ type MySQLRepo struct {
 // NewRepo 创建mysql数据实现实例
 func NewRepo(conf *config.Config, log logger.Logger) (*MySQLRepo, error) {
 	var connection string
+	var database string
 	if conf.Repo.ConnectionIsCrypted != "" {
 		str, err := util.RSADecrypt(conf.Rsa.PrivateKey, conf.Repo.ConnectionIsCrypted)
 		if err != nil {
@@ -62,7 +65,11 @@ func NewRepo(conf *config.Config, log logger.Logger) (*MySQLRepo, error) {
 		return nil, errors.New("请先配置好数据库连接信息!")
 	}
 
-	db, err := gorm.Open("mysql", connection)
+	if conf.Repo.Database != "" {
+		database = conf.Repo.Database
+	}
+
+	db, err := gorm.Open(database, connection)
 	if err != nil {
 		return nil, err
 	}

@@ -25,19 +25,33 @@ func (repo *MySQLRepo) GetVmDeviceByMac(mac string) (*model.VmDevice, error) {
 
 func (repo *MySQLRepo) GetSystemByVmMac(sn string) (*model.SystemConfig, error) {
 	var mod model.SystemConfig
-	err := repo.db.Joins("inner join vm_devices on vm_devices.system_id = system_configs.id").Where("vm_devices.mac = ?", sn).Find(&mod).Error
+	err := repo.db.Joins("inner join vm_devices on vm_devices.system_id = system_configs.id").
+	Where("vm_devices.mac = ?", sn).Find(&mod).Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) GetNetworkByVmMac(sn string) (*model.Network, error) {
 	var mod model.Network
-	err := repo.db.Joins("inner join vm_devices on vm_devices.network_id = networks.id").Where("vm_devices.mac = ?", sn).Find(&mod).Error
+	err := repo.db.Joins("inner join vm_devices on vm_devices.network_id = networks.id").
+	Where("vm_devices.mac = ?", sn).Find(&mod).Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) GetFullVmDeviceById(id uint) (*model.VmDeviceFull, error) {
 	var result model.VmDeviceFull
-	err := repo.db.Raw("SELECT t1.*,t2.network as network_name,t3.name as os_name,t5.name as system_name,t4.sn as device_sn FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id left join system_configs t5 on t1.system_id = t5.id where t1.id = ?", id).Scan(&result).Error
+	sql := `SELECT
+	t1.*,
+	t2.network as network_name,
+	t3.name as os_name,
+	t5.name as system_name,
+	t4.sn as device_sn
+	FROM vm_devices t1
+	left join networks t2 on t1.network_id = t2.id
+	left join os_configs t3 on t1.os_id = t3.id
+	left join devices t4 on t1.device_id = t4.id
+	left join system_configs t5 on t1.system_id = t5.id
+	where t1.id = ?`
+	err := repo.db.Raw(sql, id).Scan(&result).Error
 	return &result, err
 }
 
@@ -109,7 +123,11 @@ func (repo *MySQLRepo) CountVmDeviceByIpAndId(ip string, id uint) (uint, error) 
 }
 
 func (repo *MySQLRepo) CountVmDevice(where string) (int, error) {
-	row := repo.db.DB().QueryRow("SELECT count(t1.id) as count FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id " + where)
+	sql := `SELECT count(t1.id) as count FROM vm_devices t1
+	left join networks t2 on t1.network_id = t2.id
+	left join os_configs t3 on t1.os_id = t3.id
+	left join devices t4 on t1.device_id = t4.id`
+	row := repo.db.DB().QueryRow(sql + where)
 	var count = -1
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -119,7 +137,17 @@ func (repo *MySQLRepo) CountVmDevice(where string) (int, error) {
 
 func (repo *MySQLRepo) GetVmDeviceListWithPage(limit uint, offset uint, where string) ([]model.VmDeviceFull, error) {
 	var result []model.VmDeviceFull
-	sql := "SELECT t1.*,t2.network as network_name,t3.name as os_name,t5.name as system_name,t4.sn as device_sn FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id left join system_configs t5 on t1.system_id = t5.id " + where + " order by t1.id DESC"
+	sql := `SELECT t1.*,
+	t2.network as network_name,
+	t3.name as os_name,
+	t5.name as system_name,
+	t4.sn as device_sn
+	FROM vm_devices t1
+	left join networks       t2 on t1.network_id = t2.id
+	left join os_configs     t3 on t1.os_id = t3.id
+	left join devices        t4 on t1.device_id = t4.id
+	left join system_configs t5 on t1.system_id = t5.id ` +
+	where + " order by t1.id DESC"
 	if offset > 0 {
 		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
 	} else {

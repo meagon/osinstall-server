@@ -14,6 +14,7 @@ type Config struct {
 		LogFile string `ini:"logFile"`
 	}
 	Repo struct {
+		Database            string
 		Connection          string `ini:"connection"`
 		ConnectionIsCrypted string `ini:"connectionIsCrypted"`
 		Addr                string
